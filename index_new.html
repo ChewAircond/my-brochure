@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width,
+               initial-scale=1.0,
+               maximum-scale=1.0,
+               user-scalable=no">
+
+<title>My Brochure</title>
+
+<style>
+
+/* =========================
+   RESET
+========================= */
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: #eeeeee;
+}
+
+
+/* =========================
+   BOOK
+========================= */
+
+.book {
+    position: relative;
+
+    width: min(100vw, 56.25vh);
+    height: min(177.78vw, 100vh);
+
+    max-width: 1080px;
+    max-height: 1920px;
+
+    margin: auto;
+
+    perspective: 1800px;
+    perspective-origin: center center;
+
+    touch-action: pan-y;
+
+    overflow: visible;
+}
+
+
+/* =========================
+   PAGE LAYERS
+========================= */
+
+.page-layer {
+    position: absolute;
+
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    background: white;
+
+    overflow: hidden;
+}
+
+
+/* Image */
+
+.page-layer img {
+
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: contain;
+
+    user-select: none;
+    -webkit-user-select: none;
+
+    -webkit-user-drag: none;
+
+    pointer-events: none;
+
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+
+/* =========================
+   BASE PAGE
+========================= */
+
+#basePage {
+
+    z-index: 1;
+
+    box-shadow:
+        0 4px 20px rgba(0,0,0,0.22);
+}
+
+
+/* =========================
+   TURNING PAGE
+========================= */
+
+#turnPage {
+
+    z-index: 5;
+
+    transform-origin: left center;
+
+    transform-style: preserve-3d;
+
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+
+    box-shadow:
+        0 4px 20px rgba(0,0,0,0.25);
+
+    will-change: transform;
+
+    transition:
+        transform 0.52s cubic-bezier(0.4, 0, 0.2, 1);
+
+    pointer-events: none;
+}
+
+
+/* =========================
+   TURNING SHADOW
+========================= */
+
+#turnPage::after {
+
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    pointer-events: none;
+
+    background:
+        linear-gradient(
+            to left,
+            rgba(0,0,0,0.24),
+            rgba(0,0,0,0.07),
+            transparent
+        );
+
+    opacity: 0;
+
+    transition:
+        opacity 0.52s ease;
+}
+
+
+/* =========================
+   SHADOW DURING TURN
+========================= */
+
+#turnPage.turning::after {
+    opacity: 1;
+}
+
+
+/* =========================
+   CONTROLS
+========================= */
+
+.click-area {
+
+    position: absolute;
+
+    top: 0;
+
+    width: 30%;
+    height: 100%;
+
+    z-index: 20;
+
+    cursor: pointer;
+
+    touch-action: pan-y;
+}
+
+.click-left {
+    left: 0;
+}
+
+.click-right {
+    right: 0;
+}
+
+
+/* =========================
+   PAGE NUMBER
+========================= */
+
+.page-number {
+
+    position: fixed;
+
+    left: 50%;
+    bottom: 12px;
+
+    transform: translateX(-50%);
+
+    z-index: 100;
+
+    padding: 5px 12px;
+
+    border-radius: 20px;
+
+    color: white;
+
+    background: rgba(0,0,0,0.45);
+
+    font-family: Arial, sans-serif;
+
+    font-size: 13px;
+
+    line-height: 1;
+
+    pointer-events: none;
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 600px) {
+
+    .book {
+
+        width: 100vw;
+        height: 100vh;
+
+    }
+
+    #turnPage {
+
+        transition:
+            transform 0.48s cubic-bezier(0.4, 0, 0.2, 1);
+
+    }
+
+    .page-number {
+
+        bottom: 8px;
+
+    }
+
+}
+
+
+/* =========================
+   REDUCED MOTION
+========================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    #turnPage {
+
+        transition-duration: 0.25s;
+
+    }
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<div class="book" id="book">
+
+
+    <!-- Page underneath -->
+
+    <div class="page-layer" id="basePage">
+
+        <img id="baseImage"
+             src="page01.jpg"
+             alt="Brochure page">
+
+    </div>
+
+
+    <!-- Page being turned -->
+
+    <div class="page-layer" id="turnPage">
+
+        <img id="turnImage"
+             src="page01.jpg"
+             alt="Brochure page">
+
+    </div>
+
+
+    <!-- Click zones -->
+
+    <div class="click-area click-left"
+         id="clickLeft">
+    </div>
+
+
+    <div class="click-area click-right"
+         id="clickRight">
+    </div>
+
+
+</div>
+
+
+<div class="page-number"
+     id="pageNumber">
+
+    1 / 15
+
+</div>
+
+
+<script>
+
+/* =========================
+   PAGE DATA
+========================= */
+
+const pages = [
+
+    "page01.jpg",
+    "page02.jpg",
+    "page03.jpg",
+    "page04.jpg",
+    "page05.jpg",
+    "page06.jpg",
+    "page07.jpg",
+    "page08.jpg",
+    "page09.jpg",
+    "page10.jpg",
+    "page11.jpg",
+    "page12.jpg",
+    "page13.jpg",
+    "page14.jpg",
+    "page15.jpg"
+
+];
+
+
+/* =========================
+   ELEMENTS
+========================= */
+
+const book =
+    document.getElementById("book");
+
+const basePage =
+    document.getElementById("basePage");
+
+const baseImage =
+    document.getElementById("baseImage");
+
+const turnPage =
+    document.getElementById("turnPage");
+
+const turnImage =
+    document.getElementById("turnImage");
+
+const pageNumber =
+    document.getElementById("pageNumber");
+
+const clickLeft =
+    document.getElementById("clickLeft");
+
+const clickRight =
+    document.getElementById("clickRight");
+
+
+/* =========================
+   STATE
+========================= */
+
+let currentPage = 0;
+
+let isAnimating = false;
+
+const ANIMATION_TIME = 540;
+
+
+/* =========================
+   IMAGE LOADER
+========================= */
+
+function loadImage(src) {
+
+    return new Promise(function(resolve) {
+
+        const image =
+            new Image();
+
+        image.onload = function() {
+
+            resolve(src);
+
+        };
+
+        image.onerror = function() {
+
+            resolve(src);
+
+        };
+
+        image.src = src;
+
+    });
+
+}
+
+
+/* =========================
+   UPDATE PAGE NUMBER
+========================= */
+
+function updatePageNumber() {
+
+    pageNumber.textContent =
+        (currentPage + 1) +
+        " / " +
+        pages.length;
+
+}
+
+
+/* =========================
+   SET BASE PAGE
+========================= */
+
+function setBasePage(index) {
+
+    baseImage.src =
+        pages[index];
+
+}
+
+
+/* =========================
+   SET TURN PAGE
+========================= */
+
+function setTurnPage(index) {
+
+    turnImage.src =
+        pages[index];
+
+}
+
+
+/* =========================
+   FORWARD
+========================= */
+
+async function nextPage() {
+
+    if (isAnimating) {
+        return;
+    }
+
+    if (currentPage >= pages.length - 1) {
+        return;
+    }
+
+
+    isAnimating = true;
+
+
+    const oldPage =
+        currentPage;
+
+    const newPage =
+        currentPage + 1;
+
+
+    /* Prepare the next page underneath */
+
+    setBasePage(newPage);
+
+
+    /* Current page stays on top */
+
+    setTurnPage(oldPage);
+
+
+    /* Reset before animation */
+
+    turnPage.classList.remove("turning");
+
+    turnPage.style.transition = "none";
+
+    turnPage.style.transform =
+        "rotateY(0deg)";
+
+
+    /* Force browser to apply reset */
+
+    void turnPage.offsetWidth;
+
+
+    /* Restore animation */
+
+    turnPage.style.transition =
+        "";
+
+
+    turnPage.classList.add("turning");
+
+
+    requestAnimationFrame(function() {
+
+        turnPage.style.transform =
+            "rotateY(-180deg)";
+
+    });
+
+
+    await wait(ANIMATION_TIME);
+
+
+    /* New page becomes the permanent base */
+
+    currentPage = newPage;
+
+
+    setBasePage(currentPage);
+
+
+    /* Reset turning page */
+
+    turnPage.classList.remove("turning");
+
+    turnPage.style.transition = "none";
+
+    turnPage.style.transform =
+        "rotateY(0deg)";
+
+
+    updatePageNumber();
+
+
+    isAnimating = false;
+
+}
+
+
+/* =========================
+   BACKWARD
+========================= */
+
+async function previousPage() {
+
+    if (isAnimating) {
+        return;
+    }
+
+    if (currentPage <= 0) {
+        return;
+    }
+
+
+    isAnimating = true;
+
+
+    const oldPage =
+        currentPage;
+
+    const newPage =
+        currentPage - 1;
+
+
+    /* Current page stays underneath */
+
+    setBasePage(oldPage);
+
+
+    /* Previous page starts hidden */
+
+    setTurnPage(newPage);
+
+
+    turnPage.style.transition = "none";
+
+    turnPage.style.transform =
+        "rotateY(-180deg)";
+
+
+    turnPage.classList.remove("turning");
+
+
+    /* Force reset */
+
+    void turnPage.offsetWidth;
+
+
+    /* Restore animation */
+
+    turnPage.style.transition =
+        "";
+
+
+    turnPage.classList.add("turning");
+
+
+    requestAnimationFrame(function() {
+
+        turnPage.style.transform =
+            "rotateY(0deg)";
+
+    });
+
+
+    await wait(ANIMATION_TIME);
+
+
+    currentPage = newPage;
+
+
+    setBasePage(currentPage);
+
+
+    turnPage.classList.remove("turning");
+
+    turnPage.style.transition = "none";
+
+    turnPage.style.transform =
+        "rotateY(0deg)";
+
+
+    updatePageNumber();
+
+
+    isAnimating = false;
+
+}
+
+
+/* =========================
+   WAIT
+========================= */
+
+function wait(milliseconds) {
+
+    return new Promise(function(resolve) {
+
+        setTimeout(
+            resolve,
+            milliseconds
+        );
+
+    });
+
+}
+
+
+/* =========================
+   CLICK
+========================= */
+
+clickRight.addEventListener(
+    "click",
+    nextPage
+);
+
+
+clickLeft.addEventListener(
+    "click",
+    previousPage
+);
+
+
+/* =========================
+   KEYBOARD
+========================= */
+
+document.addEventListener(
+    "keydown",
+    function(event) {
+
+        if (
+            event.key === "ArrowRight"
+        ) {
+
+            nextPage();
+
+        }
+
+        if (
+            event.key === "ArrowLeft"
+        ) {
+
+            previousPage();
+
+        }
+
+    }
+);
+
+
+/* =========================
+   SWIPE
+========================= */
+
+let startX = 0;
+let startY = 0;
+
+let trackingTouch = false;
+
+const SWIPE_DISTANCE = 50;
+
+
+book.addEventListener(
+    "touchstart",
+    function(event) {
+
+        if (
+            event.touches.length !== 1
+        ) {
+
+            trackingTouch = false;
+
+            return;
+
+        }
+
+
+        if (isAnimating) {
+
+            trackingTouch = false;
+
+            return;
+
+        }
+
+
+        startX =
+            event.touches[0].clientX;
+
+        startY =
+            event.touches[0].clientY;
+
+        trackingTouch = true;
+
+    },
+    {
+        passive: true
+    }
+);
+
+
+book.addEventListener(
+    "touchend",
+    function(event) {
+
+        if (!trackingTouch) {
+            return;
+        }
+
+
+        trackingTouch = false;
+
+
+        const endX =
+            event.changedTouches[0].clientX;
+
+        const endY =
+            event.changedTouches[0].clientY;
+
+
+        const distanceX =
+            endX - startX;
+
+        const distanceY =
+            endY - startY;
+
+
+        /* Ignore vertical swipes */
+
+        if (
+            Math.abs(distanceY) >
+            Math.abs(distanceX)
+        ) {
+
+            return;
+
+        }
+
+
+        /* Ignore short movement */
+
+        if (
+            Math.abs(distanceX) <
+            SWIPE_DISTANCE
+        ) {
+
+            return;
+
+        }
+
+
+        if (distanceX < 0) {
+
+            nextPage();
+
+        } else {
+
+            previousPage();
+
+        }
+
+    },
+    {
+        passive: true
+    }
+);
+
+
+/* =========================
+   INITIAL PAGE
+========================= */
+
+setBasePage(0);
+
+setTurnPage(0);
+
+updatePageNumber();
+
+
+/* =========================
+   LIGHT PRELOAD
+========================= */
+
+/*
+   Only prepare the next and previous
+   page instead of loading all 15
+   pages at once.
+*/
+
+function preloadNearbyPages() {
+
+    if (
+        currentPage + 1 <
+        pages.length
+    ) {
+
+        loadImage(
+            pages[currentPage + 1]
+        );
+
+    }
+
+
+    if (
+        currentPage - 1 >= 0
+    ) {
+
+        loadImage(
+            pages[currentPage - 1]
+        );
+
+    }
+
+}
+
+
+/* Prepare first neighbour */
+
+preloadNearbyPages();
+
+</script>
+
+
+</body>
+
+</html>
