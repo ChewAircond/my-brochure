@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>My Brochure</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+
+    width: 100%;
+    height: 100%;
+
+    overflow: hidden;
+
+    background: #222;
+}
+
+body {
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    font-family: Arial, sans-serif;
+}
+
+
+/* =========================
+   BOOK
+========================= */
+
+.book {
+
+    position: relative;
+
+    width: min(100vw, 56.25vh);
+
+    height: min(177.78vw, 100vh);
+
+    max-width: 1080px;
+
+    max-height: 1920px;
+
+    perspective: 2000px;
+
+    transform-style: preserve-3d;
+
+}
+
+
+/* =========================
+   PAGE
+========================= */
+
+.page {
+
+    position: absolute;
+
+    width: 100%;
+
+    height: 100%;
+
+    top: 0;
+
+    left: 0;
+
+    transform-origin: left center;
+
+    transform-style: preserve-3d;
+
+    transition:
+        transform 0.8s cubic-bezier(0.645, 0.045, 0.355, 1);
+
+    background: white;
+
+    box-shadow:
+        0 5px 25px rgba(0,0,0,0.35);
+
+}
+
+
+/* PAGE IMAGE */
+
+.page img {
+
+    position: absolute;
+
+    width: 100%;
+
+    height: 100%;
+
+    object-fit: contain;
+
+    display: block;
+
+    user-select: none;
+
+    -webkit-user-drag: none;
+
+    backface-visibility: hidden;
+
+}
+
+
+/* =========================
+   FLIPPED PAGE
+========================= */
+
+.page.flipped {
+
+    transform: rotateY(-180deg);
+
+}
+
+
+/* =========================
+   PAGE SHADOW
+========================= */
+
+.page::after {
+
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+
+    right: 0;
+
+    width: 100%;
+
+    height: 100%;
+
+    pointer-events: none;
+
+    background:
+        linear-gradient(
+            to left,
+            rgba(0,0,0,0.30),
+            rgba(0,0,0,0.05),
+            transparent
+        );
+
+    opacity: 0;
+
+    transition: opacity 0.8s ease;
+
+}
+
+
+/* =========================
+   ACTIVE PAGE
+========================= */
+
+.page.active {
+
+    z-index: 20;
+
+}
+
+
+/* =========================
+   CLICK AREAS
+========================= */
+
+.click-area {
+
+    position: absolute;
+
+    top: 0;
+
+    width: 35%;
+
+    height: 100%;
+
+    z-index: 100;
+
+    cursor: pointer;
+
+}
+
+
+.click-left {
+
+    left: 0;
+
+}
+
+
+.click-right {
+
+    right: 0;
+
+}
+
+
+/* =========================
+   PAGE NUMBER
+========================= */
+
+.page-number {
+
+    position: fixed;
+
+    bottom: 12px;
+
+    left: 50%;
+
+    transform: translateX(-50%);
+
+    z-index: 200;
+
+    padding: 5px 12px;
+
+    border-radius: 20px;
+
+    color: white;
+
+    background: rgba(0,0,0,0.45);
+
+    font-size: 13px;
+
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 600px) {
+
+    .book {
+
+        width: 100vw;
+
+        height: 100vh;
+
+    }
+
+    .page-number {
+
+        bottom: 8px;
+
+    }
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<div class="book" id="book">
+
+
+    <div class="page active">
+        <img src="page01.png" alt="Page 1">
+    </div>
+
+
+    <div class="page">
+        <img src="page02.png" alt="Page 2">
+    </div>
+
+
+    <div class="page">
+        <img src="page03.png" alt="Page 3">
+    </div>
+
+
+    <div class="page">
+        <img src="page04.png" alt="Page 4">
+    </div>
+
+
+    <div class="page">
+        <img src="page05.png" alt="Page 5">
+    </div>
+
+
+    <div class="page">
+        <img src="page06.png" alt="Page 6">
+    </div>
+
+
+    <div class="page">
+        <img src="page07.png" alt="Page 7">
+    </div>
+
+
+    <div class="page">
+        <img src="page08.png" alt="Page 8">
+    </div>
+
+
+    <div class="page">
+        <img src="page09.png" alt="Page 9">
+    </div>
+
+
+    <div class="page">
+        <img src="page10.png" alt="Page 10">
+    </div>
+
+
+    <div class="page">
+        <img src="page11.png" alt="Page 11">
+    </div>
+
+
+    <div class="page">
+        <img src="page12.png" alt="Page 12">
+    </div>
+
+
+    <div class="page">
+        <img src="page13.png" alt="Page 13">
+    </div>
+
+
+    <div class="page">
+        <img src="page14.png" alt="Page 14">
+    </div>
+
+
+    <div class="page">
+        <img src="page15.png" alt="Page 15">
+    </div>
+
+
+    <div class="click-area click-left"></div>
+
+    <div class="click-area click-right"></div>
+
+
+</div>
+
+
+<div class="page-number" id="pageNumber">
+
+    1 / 15
+
+</div>
+
+
+<script>
+
+
+const pages =
+    document.querySelectorAll(".page");
+
+
+const book =
+    document.getElementById("book");
+
+
+const pageNumber =
+    document.getElementById("pageNumber");
+
+
+const clickLeft =
+    document.querySelector(".click-left");
+
+
+const clickRight =
+    document.querySelector(".click-right");
+
+
+let currentPage = 0;
+
+
+/* =========================
+   SHOW PAGE
+========================= */
+
+function showPage(index) {
+
+    if (index < 0) {
+
+        index = 0;
+
+    }
+
+    if (index >= pages.length) {
+
+        index = pages.length - 1;
+
+    }
+
+
+    pages.forEach((page, i) => {
+
+        page.classList.remove("active");
+
+        page.classList.remove("flipped");
+
+
+        if (i < index) {
+
+            page.classList.add("flipped");
+
+        }
+
+
+        if (i === index) {
+
+            page.classList.add("active");
+
+        }
+
+    });
+
+
+    currentPage = index;
+
+
+    pageNumber.textContent =
+        (currentPage + 1) +
+        " / " +
+        pages.length;
+
+}
+
+
+/* =========================
+   NEXT
+========================= */
+
+function nextPage() {
+
+    if (currentPage < pages.length - 1) {
+
+        showPage(currentPage + 1);
+
+    }
+
+}
+
+
+/* =========================
+   PREVIOUS
+========================= */
+
+function previousPage() {
+
+    if (currentPage > 0) {
+
+        showPage(currentPage - 1);
+
+    }
+
+}
+
+
+/* =========================
+   CLICK
+========================= */
+
+clickRight.addEventListener(
+    "click",
+    nextPage
+);
+
+
+clickLeft.addEventListener(
+    "click",
+    previousPage
+);
+
+
+/* =========================
+   KEYBOARD
+========================= */
+
+document.addEventListener(
+    "keydown",
+    function(event) {
+
+        if (event.key === "ArrowRight") {
+
+            nextPage();
+
+        }
+
+
+        if (event.key === "ArrowLeft") {
+
+            previousPage();
+
+        }
+
+    }
+);
+
+
+/* =========================
+   SWIPE
+========================= */
+
+let startX = 0;
+
+let endX = 0;
+
+
+book.addEventListener(
+    "touchstart",
+    function(event) {
+
+        startX =
+            event.changedTouches[0].screenX;
+
+    },
+    { passive: true }
+);
+
+
+book.addEventListener(
+    "touchend",
+    function(event) {
+
+        endX =
+            event.changedTouches[0].screenX;
+
+
+        const distance =
+            endX - startX;
+
+
+        if (Math.abs(distance) < 50) {
+
+            return;
+
+        }
+
+
+        if (distance < 0) {
+
+            nextPage();
+
+        } else {
+
+            previousPage();
+
+        }
+
+    },
+    { passive: true }
+);
+
+
+/* =========================
+   START
+========================= */
+
+showPage(0);
+
+
+</script>
+
+
+</body>
+
+</html>
