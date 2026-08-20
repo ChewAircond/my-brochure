@@ -95,14 +95,46 @@ body {
 }
 
 
-/* PAGE IMAGE */
+/* =========================
+   PAGE - A+ MOBILE FLIP
+========================= */
+
+.page {
+    position: absolute;
+
+    width: 100%;
+    height: 100%;
+
+    top: 0;
+    left: 0;
+
+    transform-origin: left center;
+    transform-style: preserve-3d;
+
+    background: white;
+
+    box-shadow: 0 5px 20px rgba(0,0,0,0.22);
+
+    will-change: transform;
+
+    transition:
+        transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+
+    backface-visibility: hidden;
+
+    -webkit-backface-visibility: hidden;
+}
+
+
+/* =========================
+   PAGE IMAGE
+========================= */
 
 .page img {
 
     position: absolute;
 
     width: 100%;
-
     height: 100%;
 
     object-fit: contain;
@@ -110,11 +142,12 @@ body {
     display: block;
 
     user-select: none;
+    -webkit-user-select: none;
 
     -webkit-user-drag: none;
 
     backface-visibility: hidden;
-
+    -webkit-backface-visibility: hidden;
 }
 
 
@@ -125,7 +158,6 @@ body {
 .page.flipped {
 
     transform: rotateY(-180deg);
-
 }
 
 
@@ -139,28 +171,21 @@ body {
 
     position: absolute;
 
-    top: 0;
-
-    right: 0;
-
-    width: 100%;
-
-    height: 100%;
+    inset: 0;
 
     pointer-events: none;
 
     background:
         linear-gradient(
             to left,
-            rgba(0,0,0,0.30),
-            rgba(0,0,0,0.05),
+            rgba(0,0,0,0.22),
+            rgba(0,0,0,0.04),
             transparent
         );
 
     opacity: 0;
 
-    transition: opacity 0.8s ease;
-
+    transition: opacity 0.55s ease;
 }
 
 
@@ -170,7 +195,25 @@ body {
 
 .page.active {
 
-    z-index: 20;
+    z-index: 50;
+}
+
+
+/* =========================
+   MOBILE PERFORMANCE
+========================= */
+
+@media (max-width: 600px) {
+
+    .page {
+
+        transition:
+            transform 0.48s cubic-bezier(0.4, 0, 0.2, 1);
+
+        box-shadow:
+            0 3px 14px rgba(0,0,0,0.20);
+
+    }
 
 }
 
@@ -395,43 +438,27 @@ let currentPage = 0;
 function showPage(index) {
 
     if (index < 0) {
-
         index = 0;
-
     }
 
     if (index >= pages.length) {
-
         index = pages.length - 1;
-
     }
-
 
     pages.forEach((page, i) => {
 
         page.classList.remove("active");
-
         page.classList.remove("flipped");
 
-
         if (i < index) {
-
             page.classList.add("flipped");
-
-        }
-
-
-        if (i === index) {
-
-            page.classList.add("active");
-
         }
 
     });
 
+    pages[index].classList.add("active");
 
     currentPage = index;
-
 
     pageNumber.textContent =
         (currentPage + 1) +
@@ -513,20 +540,31 @@ document.addEventListener(
 
 
 /* =========================
-   SWIPE
+   SWIPE - MOBILE OPTIMIZED
 ========================= */
 
 let startX = 0;
+let startY = 0;
 
-let endX = 0;
+let isSwiping = false;
+let isAnimating = false;
+
+const SWIPE_DISTANCE = 50;
+const ANIMATION_TIME = 520;
 
 
 book.addEventListener(
     "touchstart",
     function(event) {
 
-        startX =
-            event.changedTouches[0].screenX;
+        if (event.touches.length !== 1) {
+            return;
+        }
+
+        startX = event.touches[0].clientX;
+        startY = event.touches[0].clientY;
+
+        isSwiping = true;
 
     },
     { passive: true }
@@ -537,22 +575,56 @@ book.addEventListener(
     "touchend",
     function(event) {
 
-        endX =
-            event.changedTouches[0].screenX;
-
-
-        const distance =
-            endX - startX;
-
-
-        if (Math.abs(distance) < 50) {
-
+        if (!isSwiping) {
             return;
+        }
 
+        isSwiping = false;
+
+
+        if (isAnimating) {
+            return;
         }
 
 
-        if (distance < 0) {
+        const endX =
+            event.changedTouches[0].clientX;
+
+        const endY =
+            event.changedTouches[0].clientY;
+
+
+        const distanceX =
+            endX - startX;
+
+        const distanceY =
+            endY - startY;
+
+
+        /* Ignore mostly vertical movement */
+
+        if (
+            Math.abs(distanceX) <
+            Math.abs(distanceY)
+        ) {
+            return;
+        }
+
+
+        /* Ignore very short swipe */
+
+        if (
+            Math.abs(distanceX) <
+            SWIPE_DISTANCE
+        ) {
+            return;
+        }
+
+
+        isAnimating = true;
+
+
+        if (distanceX < 0) {
 
             nextPage();
 
@@ -562,10 +634,37 @@ book.addEventListener(
 
         }
 
+
+        setTimeout(
+            function() {
+
+                isAnimating = false;
+
+            },
+            ANIMATION_TIME
+        );
+
     },
     { passive: true }
 );
 
+/* =========================
+   PRELOAD IMAGES
+========================= */
+
+pages.forEach(function(page) {
+
+    const img = page.querySelector("img");
+
+    if (img && img.src) {
+
+        const preload = new Image();
+
+        preload.src = img.src;
+
+    }
+
+});      
 
 /* =========================
    START
