@@ -346,7 +346,6 @@ body {
 ========================= */
 
 const pages = [
-
     "page01.jpg",
     "page02.jpg",
     "page03.jpg",
@@ -362,7 +361,6 @@ const pages = [
     "page13.jpg",
     "page14.jpg",
     "page15.jpg"
-
 ];
 
 
@@ -370,29 +368,19 @@ const pages = [
    ELEMENTS
 ========================= */
 
-const book =
-    document.getElementById("book");
+const book = document.getElementById("book");
 
-const basePage =
-    document.getElementById("basePage");
+const baseImage = document.getElementById("baseImage");
 
-const baseImage =
-    document.getElementById("baseImage");
+const turnPage = document.getElementById("turnPage");
 
-const turnPage =
-    document.getElementById("turnPage");
+const turnImage = document.getElementById("turnImage");
 
-const turnImage =
-    document.getElementById("turnImage");
+const pageNumber = document.getElementById("pageNumber");
 
-const pageNumber =
-    document.getElementById("pageNumber");
+const clickLeft = document.getElementById("clickLeft");
 
-const clickLeft =
-    document.getElementById("clickLeft");
-
-const clickRight =
-    document.getElementById("clickRight");
+const clickRight = document.getElementById("clickRight");
 
 
 /* =========================
@@ -404,36 +392,6 @@ let currentPage = 0;
 let isAnimating = false;
 
 const ANIMATION_TIME = 540;
-
-
-/* =========================
-   IMAGE LOADER
-========================= */
-
-function loadImage(src) {
-
-    return new Promise(function(resolve) {
-
-        const image =
-            new Image();
-
-        image.onload = function() {
-
-            resolve(src);
-
-        };
-
-        image.onerror = function() {
-
-            resolve(src);
-
-        };
-
-        image.src = src;
-
-    });
-
-}
 
 
 /* =========================
@@ -451,65 +409,25 @@ function updatePageNumber() {
 
 
 /* =========================
-   SET BASE PAGE
+   WAIT
 ========================= */
 
-function setBasePage(index) {
+function wait(ms) {
 
-    baseImage.src =
-        pages[index];
+    return new Promise(function(resolve) {
+
+        setTimeout(resolve, ms);
+
+    });
 
 }
 
 
 /* =========================
-   SET TURN PAGE
+   RESET TURN PAGE
 ========================= */
 
-function setTurnPage(index) {
-
-    turnImage.src =
-        pages[index];
-
-}
-
-
-/* =========================
-   FORWARD
-========================= */
-
-async function nextPage() {
-
-    if (isAnimating) {
-        return;
-    }
-
-    if (currentPage >= pages.length - 1) {
-        return;
-    }
-
-
-    isAnimating = true;
-
-
-    const oldPage =
-        currentPage;
-
-    const newPage =
-        currentPage + 1;
-
-
-    /* Prepare the next page underneath */
-
-    setBasePage(newPage);
-
-
-    /* Current page stays on top */
-
-    setTurnPage(oldPage);
-
-
-    /* Reset before animation */
+function resetTurnPage() {
 
     turnPage.classList.remove("turning");
 
@@ -518,16 +436,38 @@ async function nextPage() {
     turnPage.style.transform =
         "rotateY(0deg)";
 
+}
 
-    /* Force browser to apply reset */
+
+/* =========================
+   NEXT PAGE
+========================= */
+
+async function nextPage() {
+
+    if (isAnimating) return;
+
+    if (currentPage >= pages.length - 1) return;
+
+    isAnimating = true;
+
+    const oldPage = currentPage;
+
+    const newPage = currentPage + 1;
+
+
+    baseImage.src = pages[newPage];
+
+    turnImage.src = pages[oldPage];
+
+
+    resetTurnPage();
 
     void turnPage.offsetWidth;
 
 
-    /* Restore animation */
-
     turnPage.style.transition =
-        "";
+        "transform 0.52s cubic-bezier(0.4, 0, 0.2, 1)";
 
 
     turnPage.classList.add("turning");
@@ -544,25 +484,17 @@ async function nextPage() {
     await wait(ANIMATION_TIME);
 
 
-    /* New page becomes the permanent base */
-
     currentPage = newPage;
 
+    updatePageNumber();
 
-    setBasePage(currentPage);
-
-
-    /* Reset turning page */
-
-    turnPage.classList.remove("turning");
 
     turnPage.style.transition = "none";
 
     turnPage.style.transform =
         "rotateY(0deg)";
 
-
-    updatePageNumber();
+    turnPage.classList.remove("turning");
 
 
     isAnimating = false;
@@ -571,39 +503,28 @@ async function nextPage() {
 
 
 /* =========================
-   BACKWARD
+   PREVIOUS PAGE
 ========================= */
 
 async function previousPage() {
 
-    if (isAnimating) {
-        return;
-    }
+    if (isAnimating) return;
 
-    if (currentPage <= 0) {
-        return;
-    }
-
+    if (currentPage <= 0) return;
 
     isAnimating = true;
 
+    const oldPage = currentPage;
 
-    const oldPage =
-        currentPage;
-
-    const newPage =
-        currentPage - 1;
+    const newPage = currentPage - 1;
 
 
-    /* Current page stays underneath */
+    baseImage.src = pages[oldPage];
 
-    setBasePage(oldPage);
+    turnImage.src = pages[newPage];
 
 
-    /* Previous page starts hidden */
-
-    setTurnPage(newPage);
-
+    turnPage.classList.remove("turning");
 
     turnPage.style.transition = "none";
 
@@ -611,18 +532,11 @@ async function previousPage() {
         "rotateY(-180deg)";
 
 
-    turnPage.classList.remove("turning");
-
-
-    /* Force reset */
-
     void turnPage.offsetWidth;
 
 
-    /* Restore animation */
-
     turnPage.style.transition =
-        "";
+        "transform 0.52s cubic-bezier(0.4, 0, 0.2, 1)";
 
 
     turnPage.classList.add("turning");
@@ -641,40 +555,20 @@ async function previousPage() {
 
     currentPage = newPage;
 
+    baseImage.src = pages[newPage];
 
-    setBasePage(currentPage);
+    updatePageNumber();
 
-
-    turnPage.classList.remove("turning");
 
     turnPage.style.transition = "none";
 
     turnPage.style.transform =
         "rotateY(0deg)";
 
-
-    updatePageNumber();
+    turnPage.classList.remove("turning");
 
 
     isAnimating = false;
-
-}
-
-
-/* =========================
-   WAIT
-========================= */
-
-function wait(milliseconds) {
-
-    return new Promise(function(resolve) {
-
-        setTimeout(
-            resolve,
-            milliseconds
-        );
-
-    });
 
 }
 
@@ -687,7 +581,6 @@ clickRight.addEventListener(
     "click",
     nextPage
 );
-
 
 clickLeft.addEventListener(
     "click",
@@ -703,17 +596,13 @@ document.addEventListener(
     "keydown",
     function(event) {
 
-        if (
-            event.key === "ArrowRight"
-        ) {
+        if (event.key === "ArrowRight") {
 
             nextPage();
 
         }
 
-        if (
-            event.key === "ArrowLeft"
-        ) {
+        if (event.key === "ArrowLeft") {
 
             previousPage();
 
@@ -728,6 +617,7 @@ document.addEventListener(
 ========================= */
 
 let startX = 0;
+
 let startY = 0;
 
 let trackingTouch = false;
@@ -739,9 +629,7 @@ book.addEventListener(
     "touchstart",
     function(event) {
 
-        if (
-            event.touches.length !== 1
-        ) {
+        if (event.touches.length !== 1) {
 
             trackingTouch = false;
 
@@ -778,12 +666,12 @@ book.addEventListener(
     "touchend",
     function(event) {
 
-        if (!trackingTouch) {
-            return;
-        }
-
+        if (!trackingTouch) return;
 
         trackingTouch = false;
+
+
+        if (isAnimating) return;
 
 
         const endX =
@@ -800,8 +688,6 @@ book.addEventListener(
             endY - startY;
 
 
-        /* Ignore vertical swipes */
-
         if (
             Math.abs(distanceY) >
             Math.abs(distanceX)
@@ -811,8 +697,6 @@ book.addEventListener(
 
         }
 
-
-        /* Ignore short movement */
 
         if (
             Math.abs(distanceX) <
@@ -845,22 +729,27 @@ book.addEventListener(
    INITIAL PAGE
 ========================= */
 
-setBasePage(0);
+baseImage.src = pages[0];
 
-setTurnPage(0);
+turnImage.src = pages[0];
 
 updatePageNumber();
 
+resetTurnPage();
+
 
 /* =========================
-   LIGHT PRELOAD
+   PRELOAD NEARBY PAGES
 ========================= */
 
-/*
-   Only prepare the next and previous
-   page instead of loading all 15
-   pages at once.
-*/
+function preloadImage(src) {
+
+    const image = new Image();
+
+    image.src = src;
+
+}
+
 
 function preloadNearbyPages() {
 
@@ -869,7 +758,7 @@ function preloadNearbyPages() {
         pages.length
     ) {
 
-        loadImage(
+        preloadImage(
             pages[currentPage + 1]
         );
 
@@ -880,7 +769,7 @@ function preloadNearbyPages() {
         currentPage - 1 >= 0
     ) {
 
-        loadImage(
+        preloadImage(
             pages[currentPage - 1]
         );
 
@@ -888,8 +777,6 @@ function preloadNearbyPages() {
 
 }
 
-
-/* Prepare first neighbour */
 
 preloadNearbyPages();
 
