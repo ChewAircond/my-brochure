@@ -453,16 +453,17 @@ function nextPage() {
        on the turning layer.
     */
 
-    turnImage.src =
-        pages[oldPage];
+   turnImage.src =
+    pages[oldPage];
 
+turnPage.style.display =
+    "block";
 
-    turnPage.style.transition =
-        "none";
+turnPage.style.transition =
+    "none";
 
-    turnPage.style.transform =
-        "rotateY(0deg)";
-
+turnPage.style.transform =
+    "rotateY(0deg)";
 
     /*
        Force browser reset.
@@ -513,7 +514,9 @@ function nextPage() {
 
         turnPage.style.transform =
             "rotateY(0deg)";
-
+          
+       turnPage.style.display =
+            "none";
 
         /*
            Force reset.
@@ -857,8 +860,8 @@ function preloadNearbyPages() {
 baseImage.src =
     pages[0];
 
-turnImage.src =
-    pages[0];
+turnPage.style.display =
+    "none";
 
 updatePageNumber();
 
