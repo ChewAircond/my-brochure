@@ -430,7 +430,6 @@ function nextPage() {
 
     isAnimating = true;
 
-
     const oldPage =
         currentPage;
 
@@ -439,31 +438,33 @@ function nextPage() {
 
 
     /*
-       IMPORTANT:
-       Keep the current page
-       as the visible base.
+       Put NEXT page underneath
+       before the animation starts.
     */
 
     baseImage.src =
-        pages[oldPage];
+        pages[newPage];
 
 
     /*
-       Put the current page
+       Put CURRENT page
        on the turning layer.
     */
 
-   turnImage.src =
-    pages[oldPage];
+    turnImage.src =
+        pages[oldPage];
 
-turnPage.style.display =
-    "block";
 
-turnPage.style.transition =
-    "none";
+    turnPage.style.display =
+        "block";
 
-turnPage.style.transform =
-    "rotateY(0deg)";
+
+    turnPage.style.transition =
+        "none";
+
+    turnPage.style.transform =
+        "rotateY(0deg)";
+
 
     /*
        Force browser reset.
@@ -484,29 +485,19 @@ turnPage.style.transform =
 
 
     /*
-       Wait until animation finishes.
+       Animation finished.
     */
 
     setTimeout(function() {
 
-
-        /*
-           NOW change the real page.
-        */
-
         currentPage =
             newPage;
-
-
-        baseImage.src =
-            pages[currentPage];
-
 
         updatePageNumber();
 
 
         /*
-           Hide turning page.
+           Hide turning layer.
         */
 
         turnPage.style.transition =
@@ -514,26 +505,16 @@ turnPage.style.transform =
 
         turnPage.style.transform =
             "rotateY(0deg)";
-          
-       turnPage.style.display =
+
+        turnPage.style.display =
             "none";
 
-        /*
-           Force reset.
-        */
 
         void turnPage.offsetWidth;
 
-
         isAnimating = false;
 
-
-        /*
-           Prepare nearby image.
-        */
-
         preloadNearbyPages();
-
 
     }, ANIMATION_TIME);
 
