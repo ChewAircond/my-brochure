@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width,
+               initial-scale=1.0,
+               maximum-scale=1.0,
+               user-scalable=no">
+
+<title>My Brochure</title>
+
+<style>
+
+/* =========================
+   RESET
+========================= */
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: #eeeeee;
+}
+
+
+/* =========================
+   BOOK
+========================= */
+
+.book {
+    position: relative;
+
+    width: min(100vw, 56.25vh);
+    height: min(177.78vw, 100vh);
+
+    max-width: 1080px;
+    max-height: 1920px;
+
+    margin: auto;
+
+    perspective: 1800px;
+    perspective-origin: center center;
+
+    touch-action: none;
+
+    overflow: visible;
+}
+
+
+/* =========================
+   PAGE LAYERS
+========================= */
+
+.page-layer {
+    position: absolute;
+
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    background: white;
+
+    overflow: hidden;
+}
+
+
+/* Image */
+
+.page-layer img {
+
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: contain;
+
+    user-select: none;
+    -webkit-user-select: none;
+
+    -webkit-user-drag: none;
+
+    pointer-events: none;
+    transform-origin: center center;
+    will-change: transform;
+
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+
+/* =========================
+   BASE PAGE
+========================= */
+
+#basePage {
+
+    z-index: 1;
+
+    box-shadow:
+        0 4px 20px rgba(0,0,0,0.22);
+}
+
+
+/* =========================
+   TURNING PAGE
+========================= */
+
+#turnPage {
+
+    z-index: 5;
+
+    transform-origin: left center;
+
+    transform-style: preserve-3d;
+
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+
+    box-shadow:
+        0 4px 20px rgba(0,0,0,0.25);
+
+    will-change: transform;
+
+    transition:
+        transform 0.52s cubic-bezier(0.4, 0, 0.2, 1);
+
+    pointer-events: none;
+}
+
+
+/* =========================
+   TURNING SHADOW
+========================= */
+
+#turnPage::after {
+
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    pointer-events: none;
+
+    background:
+        linear-gradient(
+            to left,
+            rgba(0,0,0,0.24),
+            rgba(0,0,0,0.07),
+            transparent
+        );
+
+    opacity: 0;
+
+    transition:
+        opacity 0.52s ease;
+}
+
+
+/* =========================
+   SHADOW DURING TURN
+========================= */
+
+#turnPage.turning::after {
+    opacity: 1;
+}
+
+
+/* =========================
+   CONTROLS
+========================= */
+
+.click-area {
+
+    position: absolute;
+
+    top: 0;
+
+    width: 30%;
+    height: 100%;
+
+    z-index: 20;
+
+    cursor: pointer;
+
+    touch-action: none;
+}
+
+.click-left {
+    left: 0;
+}
+
+.click-right {
+    right: 0;
+}
+
+
+/* =========================
+   PAGE NUMBER
+========================= */
+
+.page-number {
+
+    position: fixed;
+
+    left: 50%;
+    bottom: 12px;
+
+    transform: translateX(-50%);
+
+    z-index: 100;
+
+    padding: 5px 12px;
+
+    border-radius: 20px;
+
+    color: white;
+
+    background: rgba(0,0,0,0.45);
+
+    font-family: Arial, sans-serif;
+
+    font-size: 13px;
+
+    line-height: 1;
+
+    pointer-events: none;
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 600px) {
+
+    .book {
+
+        width: 100vw;
+        height: 100vh;
+
+    }
+
+    #turnPage {
+
+        transition:
+            transform 0.48s cubic-bezier(0.4, 0, 0.2, 1);
+
+    }
+
+    .page-number {
+
+        bottom: 8px;
+
+    }
+
+}
+
+
+/* =========================
+   REDUCED MOTION
+========================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    #turnPage {
+
+        transition-duration: 0.25s;
+
+    }
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<div class="book" id="book">
+
+
+    <!-- Page underneath -->
+
+    <div class="page-layer" id="basePage">
+
+        <img id="baseImage"
+             src="page01.jpg"
+             alt="Brochure page">
+
+    </div>
+
+
+    <!-- Page being turned -->
+
+    <div class="page-layer" id="turnPage">
+
+        <img id="turnImage"
+             src="page01.jpg"
+             alt="Brochure page">
+
+    </div>
+
+
+    <!-- Click zones -->
+
+    <div class="click-area click-left"
+         id="clickLeft">
+    </div>
+
+
+    <div class="click-area click-right"
+         id="clickRight">
+    </div>
+
+
+</div>
+
+
+<div class="page-number"
+     id="pageNumber">
+
+    1 / 15
+
+</div>
+
+<script>
+
+/* =========================
+   PAGE DATA
+========================= */
+
+const pages = [
+    "page01.jpg",
+    "page02.jpg",
+    "page03.jpg",
+    "page04.jpg",
+    "page05.jpg",
+    "page06.jpg",
+    "page07.jpg",
+    "page08.jpg",
+    "page09.jpg",
+    "page10.jpg",
+    "page11.jpg",
+    "page12.jpg",
+    "page13.jpg",
+    "page14.jpg",
+    "page15.jpg"
+];
+
+
+/* =========================
+   ELEMENTS
+========================= */
+
+const book =
+    document.getElementById("book");
+
+const baseImage =
+    document.getElementById("baseImage");
+
+const turnPage =
+    document.getElementById("turnPage");
+
+const turnImage =
+    document.getElementById("turnImage");
+
+const pageNumber =
+    document.getElementById("pageNumber");
+
+const clickLeft =
+    document.getElementById("clickLeft");
+
+const clickRight =
+    document.getElementById("clickRight");
+
+
+/* =========================
+   STATE
+========================= */
+
+let currentPage = 0;
+
+let isAnimating = false;
+
+const ANIMATION_TIME = 520;
+
+
+/* =========================
+   UPDATE PAGE NUMBER
+========================= */
+
+function updatePageNumber() {
+
+    pageNumber.textContent =
+        (currentPage + 1) +
+        " / " +
+        pages.length;
+
+}
+
+
+/* =========================
+   NEXT PAGE
+========================= */
+
+function nextPage() {
+
+    if (isAnimating || zoomScale > 1.01) {
+        return;
+    }
+
+    if (currentPage >= pages.length - 1) {
+        return;
+    }
+
+    resetZoom();
+    isAnimating = true;
+
+    const oldPage =
+        currentPage;
+
+    const newPage =
+        currentPage + 1;
+
+
+    /*
+       Put NEXT page underneath
+       before the animation starts.
+    */
+
+    baseImage.src =
+        pages[newPage];
+
+
+    /*
+       Put CURRENT page
+       on the turning layer.
+    */
+
+    turnImage.src =
+        pages[oldPage];
+
+
+    turnPage.style.display =
+        "block";
+
+
+    turnPage.style.transition =
+        "none";
+
+    turnPage.style.transform =
+        "rotateY(0deg)";
+
+
+    /*
+       Force browser reset.
+    */
+
+    void turnPage.offsetWidth;
+
+
+    /*
+       Start page turn.
+    */
+
+    turnPage.style.transition =
+        "transform 0.52s cubic-bezier(0.4, 0, 0.2, 1)";
+
+    turnPage.style.transform =
+        "rotateY(-180deg)";
+
+
+    /*
+       Animation finished.
+    */
+
+    setTimeout(function() {
+
+        currentPage =
+            newPage;
+
+        updatePageNumber();
+
+
+        /*
+           Hide turning layer.
+        */
+
+        turnPage.style.transition =
+            "none";
+
+        turnPage.style.transform =
+            "rotateY(0deg)";
+
+        turnPage.style.display =
+            "none";
+
+
+        void turnPage.offsetWidth;
+
+        isAnimating = false;
+
+        preloadNearbyPages();
+
+    }, ANIMATION_TIME);
+
+}
+
+
+/* =========================
+   PREVIOUS PAGE
+========================= */
+
+function previousPage() {
+
+    if (isAnimating || zoomScale > 1.01) {
+        return;
+    }
+
+    if (currentPage <= 0) {
+        return;
+    }
+
+    resetZoom();
+    isAnimating = true;
+
+
+    const oldPage =
+        currentPage;
+
+    const newPage =
+        currentPage - 1;
+
+
+    /*
+       Keep current page
+       as the visible base.
+    */
+
+    baseImage.src =
+        pages[oldPage];
+
+
+    /*
+       Previous page goes
+       onto turning layer.
+    */
+
+    turnImage.src =
+        pages[newPage];
+
+
+    /*
+       Start from the back.
+    */
+
+    turnPage.style.transition =
+        "none";
+
+    turnPage.style.transform =
+        "rotateY(-180deg)";
+
+
+    void turnPage.offsetWidth;
+
+
+    /*
+       Reverse the page.
+    */
+
+    turnPage.style.transition =
+        "transform 0.52s cubic-bezier(0.4, 0, 0.2, 1)";
+
+    turnPage.style.transform =
+        "rotateY(0deg)";
+
+
+    setTimeout(function() {
+
+
+        /*
+           NOW change the real page.
+        */
+
+        currentPage =
+            newPage;
+
+
+        baseImage.src =
+            pages[currentPage];
+
+
+        updatePageNumber();
+
+
+        /*
+           Reset turning layer.
+        */
+
+        turnPage.style.transition =
+            "none";
+
+        turnPage.style.transform =
+            "rotateY(0deg)";
+
+
+        void turnPage.offsetWidth;
+
+
+        isAnimating = false;
+
+
+        preloadNearbyPages();
+
+
+    }, ANIMATION_TIME);
+
+}
+
+
+/* =========================
+   CLICK
+========================= */
+
+clickRight.addEventListener(
+    "click",
+    nextPage
+);
+
+
+clickLeft.addEventListener(
+    "click",
+    previousPage
+);
+
+
+/* =========================
+   KEYBOARD
+========================= */
+
+document.addEventListener(
+    "keydown",
+    function(event) {
+
+        if (event.key === "ArrowRight") {
+
+            nextPage();
+
+        }
+
+
+        if (event.key === "ArrowLeft") {
+
+            previousPage();
+
+        }
+
+    }
+);
+
+
+/* =========================
+   SWIPE + PINCH ZOOM + PAN
+========================= */
+
+let startX = 0;
+let startY = 0;
+let trackingTouch = false;
+const SWIPE_DISTANCE = 50;
+
+let zoomScale = 1;
+let panX = 0;
+let panY = 0;
+let touchMode = "none";
+let pinchStartDistance = 0;
+let pinchStartScale = 1;
+let panStartX = 0;
+let panStartY = 0;
+let panOriginX = 0;
+let panOriginY = 0;
+
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 3;
+
+function applyZoom() {
+    const transform = `translate(${panX}px, ${panY}px) scale(${zoomScale})`;
+    baseImage.style.transform = transform;
+    turnImage.style.transform = transform;
+}
+
+function resetZoom() {
+    zoomScale = 1;
+    panX = 0;
+    panY = 0;
+    touchMode = "none";
+    trackingTouch = false;
+    applyZoom();
+}
+
+function touchDistance(touches) {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.hypot(dx, dy);
+}
+
+book.addEventListener("touchstart", function(event) {
+    if (isAnimating) {
+        trackingTouch = false;
+        touchMode = "none";
+        return;
+    }
+
+    if (event.touches.length >= 2) {
+        event.preventDefault();
+        trackingTouch = false;
+        touchMode = "pinch";
+        pinchStartDistance = touchDistance(event.touches);
+        pinchStartScale = zoomScale;
+        return;
+    }
+
+    if (event.touches.length === 1 && zoomScale > 1.01) {
+        event.preventDefault();
+        trackingTouch = false;
+        touchMode = "pan";
+        panStartX = event.touches[0].clientX;
+        panStartY = event.touches[0].clientY;
+        panOriginX = panX;
+        panOriginY = panY;
+        return;
+    }
+
+    if (event.touches.length === 1) {
+        touchMode = "swipe";
+        startX = event.touches[0].clientX;
+        startY = event.touches[0].clientY;
+        trackingTouch = true;
+    }
+}, { passive: false });
+
+book.addEventListener("touchmove", function(event) {
+    if (isAnimating) return;
+
+    if (event.touches.length >= 2 && touchMode === "pinch") {
+        event.preventDefault();
+        const currentDistance = touchDistance(event.touches);
+        if (pinchStartDistance > 0) {
+            zoomScale = Math.max(
+                MIN_ZOOM,
+                Math.min(MAX_ZOOM, pinchStartScale * currentDistance / pinchStartDistance)
+            );
+            if (zoomScale <= 1.01) {
+                zoomScale = 1;
+                panX = 0;
+                panY = 0;
+            }
+            applyZoom();
+        }
+        return;
+    }
+
+    if (event.touches.length === 1 && zoomScale > 1.01 && touchMode === "pan") {
+        event.preventDefault();
+        panX = panOriginX + event.touches[0].clientX - panStartX;
+        panY = panOriginY + event.touches[0].clientY - panStartY;
+        applyZoom();
+    }
+}, { passive: false });
+
+book.addEventListener("touchend", function(event) {
+    if (touchMode === "pinch" && event.touches.length < 2) {
+        touchMode = zoomScale > 1.01 ? "pan" : "none";
+        trackingTouch = false;
+        return;
+    }
+
+    if (!trackingTouch || touchMode !== "swipe") {
+        trackingTouch = false;
+        if (event.touches.length === 0) touchMode = "none";
+        return;
+    }
+
+    trackingTouch = false;
+    touchMode = "none";
+
+    if (isAnimating || zoomScale > 1.01 || event.changedTouches.length === 0) {
+        return;
+    }
+
+    const endX = event.changedTouches[0].clientX;
+    const endY = event.changedTouches[0].clientY;
+    const distanceX = endX - startX;
+    const distanceY = endY - startY;
+
+    if (Math.abs(distanceY) > Math.abs(distanceX)) return;
+    if (Math.abs(distanceX) < SWIPE_DISTANCE) return;
+
+    if (distanceX < 0) {
+        nextPage();
+    } else {
+        previousPage();
+    }
+}, { passive: true });
+
+/* =========================
+   PRELOAD
+========================= */
+
+function preloadImage(src) {
+
+    const image =
+        new Image();
+
+    image.src =
+        src;
+
+}
+
+
+function preloadNearbyPages() {
+
+    if (
+        currentPage + 1 <
+        pages.length
+    ) {
+
+        preloadImage(
+            pages[currentPage + 1]
+        );
+
+    }
+
+
+    if (
+        currentPage - 1 >= 0
+    ) {
+
+        preloadImage(
+            pages[currentPage - 1]
+        );
+
+    }
+
+}
+
+
+/* =========================
+   START
+========================= */
+
+baseImage.src =
+    pages[0];
+
+turnPage.style.display =
+    "none";
+
+updatePageNumber();
+
+preloadNearbyPages();
+
+
+</script>
+
+
+</body>
+
+</html>
