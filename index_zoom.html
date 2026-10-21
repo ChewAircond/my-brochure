@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Brochure</title>
+<style>
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+    width: 100%; height: 100%; margin: 0; padding: 0;
+    overflow: hidden; background: #eeeeee;
+}
+.book {
+    position: relative;
+    width: min(100vw, 56.25vh);
+    height: min(177.78vw, 100vh);
+    max-width: 1080px; max-height: 1920px;
+    margin: auto;
+    perspective: 1800px;
+    perspective-origin: center center;
+    touch-action: none;
+    overflow: visible;
+}
+.page-layer {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    background: white; overflow: hidden;
+}
+.page-layer img {
+    width: 100%; height: 100%; display: block; object-fit: contain;
+    user-select: none; -webkit-user-select: none; -webkit-user-drag: none;
+    pointer-events: none;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    transform-origin: center center;
+    will-change: transform;
+}
+#basePage { z-index: 1; box-shadow: 0 4px 20px rgba(0,0,0,0.22); }
+#turnPage {
+    z-index: 5; transform-origin: left center; transform-style: preserve-3d;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25); will-change: transform;
+    transition: transform 0.52s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+}
+#turnPage::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(to left, rgba(0,0,0,0.24), rgba(0,0,0,0.07), transparent);
+    opacity: 0; transition: opacity 0.52s ease;
+}
+#turnPage.turning::after { opacity: 1; }
+.click-area {
+    position: absolute; top: 0; width: 30%; height: 100%; z-index: 20;
+    cursor: pointer; touch-action: none;
+}
+.click-left { left: 0; }
+.click-right { right: 0; }
+.page-number {
+    position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%);
+    z-index: 100; padding: 5px 12px; border-radius: 20px; color: white;
+    background: rgba(0,0,0,0.45); font-family: Arial, sans-serif;
+    font-size: 13px; line-height: 1; pointer-events: none;
+}
+.zoom-controls {
+    position: fixed; right: 12px; bottom: 12px; z-index: 120;
+    display: flex; gap: 6px; align-items: center;
+    font-family: Arial, sans-serif;
+}
+.zoom-controls button {
+    width: 38px; height: 38px; border: 0; border-radius: 50%;
+    color: #222; background: rgba(255,255,255,0.94);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.22);
+    font-size: 22px; line-height: 1; cursor: pointer;
+}
+.zoom-controls button.reset { width: auto; padding: 0 12px; font-size: 13px; }
+@media (max-width: 600px) {
+    .book { width: 100vw; height: 100vh; }
+    #turnPage { transition: transform 0.48s cubic-bezier(0.4, 0, 0.2, 1); }
+    .page-number { bottom: 8px; }
+    .zoom-controls { right: 8px; bottom: 8px; gap: 5px; }
+    .zoom-controls button { width: 36px; height: 36px; }
+    .zoom-controls button.reset { padding: 0 9px; font-size: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    #turnPage { transition-duration: 0.25s; }
+}
+</style>
+</head>
+<body>
+<div class="book" id="book">
+    <div class="page-layer" id="basePage">
+        <img id="baseImage" src="page01.jpg" alt="Brochure page">
+    </div>
+    <div class="page-layer" id="turnPage">
+        <img id="turnImage" src="page01.jpg" alt="Brochure page">
+    </div>
+    <div class="click-area click-left" id="clickLeft"></div>
+    <div class="click-area click-right" id="clickRight"></div>
+</div>
+
+<div class="page-number" id="pageNumber">1 / 15</div>
+<div class="zoom-controls" aria-label="Zoom controls">
+    <button type="button" id="zoomOut" aria-label="Zoom out" title="Zoom out">−</button>
+    <button type="button" id="zoomIn" aria-label="Zoom in" title="Zoom in">+</button>
+    <button type="button" class="reset" id="zoomReset" aria-label="Reset zoom">Reset</button>
+</div>
+
+<script>
+const pages = [
+    "page01.jpg", "page02.jpg", "page03.jpg", "page04.jpg", "page05.jpg",
+    "page06.jpg", "page07.jpg", "page08.jpg", "page09.jpg", "page10.jpg",
+    "page11.jpg", "page12.jpg", "page13.jpg", "page14.jpg", "page15.jpg"
+];
+
+const book = document.getElementById("book");
+const baseImage = document.getElementById("baseImage");
+const turnPage = document.getElementById("turnPage");
+const turnImage = document.getElementById("turnImage");
+const pageNumber = document.getElementById("pageNumber");
+const clickLeft = document.getElementById("clickLeft");
+const clickRight = document.getElementById("clickRight");
+const zoomInButton = document.getElementById("zoomIn");
+const zoomOutButton = document.getElementById("zoomOut");
+const zoomResetButton = document.getElementById("zoomReset");
+
+let currentPage = 0;
+let isAnimating = false;
+const ANIMATION_TIME = 520;
+
+/* Zoom state is shared by both page images so they stay aligned. */
+let zoom = 1;
+let panX = 0;
+let panY = 0;
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 3.5;
+let trackingTouch = false;
+let startX = 0;
+let startY = 0;
+let startPanX = 0;
+let startPanY = 0;
+let pinching = false;
+let pinchStartDistance = 0;
+let pinchStartZoom = 1;
+let panning = false;
+let panTouchStartX = 0;
+let panTouchStartY = 0;
+let swipeStartX = 0;
+let swipeStartY = 0;
+const SWIPE_DISTANCE = 50;
+
+function applyZoom() {
+    const transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+    baseImage.style.transform = transform;
+    turnImage.style.transform = transform;
+    zoomInButton.disabled = zoom >= MAX_ZOOM;
+    zoomOutButton.disabled = zoom <= MIN_ZOOM;
+    zoomInButton.style.opacity = zoom >= MAX_ZOOM ? "0.5" : "1";
+    zoomOutButton.style.opacity = zoom <= MIN_ZOOM ? "0.5" : "1";
+}
+function setZoom(nextZoom) {
+    zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, nextZoom));
+    if (zoom === 1) { panX = 0; panY = 0; }
+    applyZoom();
+}
+function resetZoom() {
+    zoom = 1; panX = 0; panY = 0;
+    applyZoom();
+}
+function zoomBy(amount) { setZoom(zoom + amount); }
+let suppressClickUntil = 0;
+function updatePageNumber() {
+    pageNumber.textContent = (currentPage + 1) + " / " + pages.length;
+}
+function handlePageClick(direction) {
+    if (Date.now() < suppressClickUntil) return;
+    if (direction === "next") nextPage();
+    else previousPage();
+}
+function nextPage() {
+    if (isAnimating || currentPage >= pages.length - 1) return;
+    isAnimating = true;
+    const oldPage = currentPage;
+    const newPage = currentPage + 1;
+    baseImage.src = pages[newPage];
+    turnImage.src = pages[oldPage];
+    turnPage.style.display = "block";
+    turnPage.style.transition = "none";
+    turnPage.style.transform = "rotateY(0deg)";
+    void turnPage.offsetWidth;
+    turnPage.style.transition = "transform 0.52s cubic-bezier(0.4, 0, 0.2, 1)";
+    turnPage.style.transform = "rotateY(-180deg)";
+    setTimeout(function() {
+        currentPage = newPage;
+        updatePageNumber();
+        turnPage.style.transition = "none";
+        turnPage.style.transform = "rotateY(0deg)";
+        turnPage.style.display = "none";
+        void turnPage.offsetWidth;
+        isAnimating = false;
+        resetZoom();
+        preloadNearbyPages();
+    }, ANIMATION_TIME);
+}
+function previousPage() {
+    if (isAnimating || currentPage <= 0) return;
+    isAnimating = true;
+    const oldPage = currentPage;
+    const newPage = currentPage - 1;
+    baseImage.src = pages[oldPage];
+    turnImage.src = pages[newPage];
+    turnPage.style.transition = "none";
+    turnPage.style.transform = "rotateY(-180deg)";
+    void turnPage.offsetWidth;
+    turnPage.style.transition = "transform 0.52s cubic-bezier(0.4, 0, 0.2, 1)";
+    turnPage.style.transform = "rotateY(0deg)";
+    setTimeout(function() {
+        currentPage = newPage;
+        baseImage.src = pages[currentPage];
+        updatePageNumber();
+        turnPage.style.transition = "none";
+        turnPage.style.transform = "rotateY(0deg)";
+        void turnPage.offsetWidth;
+        isAnimating = false;
+        resetZoom();
+        preloadNearbyPages();
+    }, ANIMATION_TIME);
+}
+
+clickRight.addEventListener("click", () => handlePageClick("next"));
+clickLeft.addEventListener("click", () => handlePageClick("previous"));
+document.addEventListener("keydown", function(event) {
+    if (event.key === "ArrowRight") nextPage();
+    if (event.key === "ArrowLeft") previousPage();
+    if (event.key === "+" || event.key === "=") zoomBy(0.25);
+    if (event.key === "-") zoomBy(-0.25);
+    if (event.key === "Escape") resetZoom();
+});
+zoomInButton.addEventListener("click", () => zoomBy(0.25));
+zoomOutButton.addEventListener("click", () => zoomBy(-0.25));
+zoomResetButton.addEventListener("click", resetZoom);
+
+/* Mouse wheel zoom on desktop. */
+book.addEventListener("wheel", function(event) {
+    event.preventDefault();
+    zoomBy(event.deltaY < 0 ? 0.15 : -0.15);
+}, { passive: false });
+
+function touchDistance(touches) {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.hypot(dx, dy);
+}
+
+/* One finger swipes turn pages; two fingers zoom; one finger drags when zoomed. */
+book.addEventListener("touchstart", function(event) {
+    if (isAnimating) {
+        trackingTouch = false;
+        return;
+    }
+    if (event.touches.length === 2) {
+        event.preventDefault();
+        trackingTouch = false;
+        panning = false;
+        pinching = true;
+        suppressClickUntil = Date.now() + 700;
+        pinchStartDistance = touchDistance(event.touches);
+        pinchStartZoom = zoom;
+        return;
+    }
+    if (event.touches.length !== 1) {
+        trackingTouch = false;
+        return;
+    }
+    const touch = event.touches[0];
+    if (zoom > 1) {
+        event.preventDefault();
+        panning = true;
+        suppressClickUntil = Date.now() + 700;
+        panTouchStartX = touch.clientX;
+        panTouchStartY = touch.clientY;
+        startPanX = panX;
+        startPanY = panY;
+        trackingTouch = false;
+    } else {
+        panning = false;
+        swipeStartX = touch.clientX;
+        swipeStartY = touch.clientY;
+        trackingTouch = true;
+    }
+}, { passive: false });
+
+book.addEventListener("touchmove", function(event) {
+    if (pinching && event.touches.length >= 2) {
+        event.preventDefault();
+        const distance = touchDistance(event.touches);
+        if (pinchStartDistance > 0) {
+            setZoom(pinchStartZoom * distance / pinchStartDistance);
+        }
+        return;
+    }
+    if (panning && event.touches.length === 1 && zoom > 1) {
+        event.preventDefault();
+        const touch = event.touches[0];
+        panX = startPanX + (touch.clientX - panTouchStartX);
+        panY = startPanY + (touch.clientY - panTouchStartY);
+        applyZoom();
+    }
+}, { passive: false });
+
+book.addEventListener("touchend", function(event) {
+    if (pinching) {
+        if (event.touches.length < 2) pinching = false;
+        trackingTouch = false;
+        return;
+    }
+    if (panning) {
+        if (event.touches.length === 0) panning = false;
+        trackingTouch = false;
+        return;
+    }
+    if (!trackingTouch) return;
+    trackingTouch = false;
+    if (isAnimating || !event.changedTouches.length) return;
+    const touch = event.changedTouches[0];
+    const distanceX = touch.clientX - swipeStartX;
+    const distanceY = touch.clientY - swipeStartY;
+    if (Math.abs(distanceY) > Math.abs(distanceX)) return;
+    if (Math.abs(distanceX) < SWIPE_DISTANCE) return;
+    if (distanceX < 0) nextPage(); else previousPage();
+}, { passive: true });
+
+book.addEventListener("touchcancel", function() {
+    trackingTouch = false;
+    pinching = false;
+    panning = false;
+}, { passive: true });
+
+function preloadImage(src) {
+    const image = new Image();
+    image.src = src;
+}
+function preloadNearbyPages() {
+    if (currentPage + 1 < pages.length) preloadImage(pages[currentPage + 1]);
+    if (currentPage - 1 >= 0) preloadImage(pages[currentPage - 1]);
+}
+baseImage.src = pages[0];
+turnPage.style.display = "none";
+updatePageNumber();
+applyZoom();
+preloadNearbyPages();
+</script>
+</body>
+</html>
